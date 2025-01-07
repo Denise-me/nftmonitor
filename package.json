@@ -1,0 +1,21 @@
+{
+  "name": "nft-monitor",
+  "version": "1.0.0",
+  "description": "NFT movement monitoring script",
+  "main": "nftMonitor.js",
+  "scripts": {
+    "start": "node nftMonitor.js",
+    "dev": "nodemon nftMonitor.js"
+  },
+  "dependencies": {
+    "ethers": "^6.7.1",
+    "web3": "^4.1.1",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "keywords": ["nft", "monitoring", "blockchain", "ethereum"],
+  "author": "",
+  "license": "MIT"
+}
