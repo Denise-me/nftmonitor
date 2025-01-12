@@ -163,17 +163,56 @@ class NFTMonitor {
 
 // 使用示例
 async function main() {
-    // 从环境变量获取RPC URL
+    // 从环境变量或命令行参数获取RPC URL
     const RPC_URL = process.env.RPC_URL || 'https://eth-mainnet.g.alchemy.com/v2/YOUR_API_KEY';
     
-    // 要监控的NFT合约地址列表 (可选)
-    const CONTRACTS_TO_MONITOR = [
-        // '0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d', // BAYC
-        // '0x60e4d786628fea6478f785a6d7e704777c86a7c6', // MAYC
-    ];
+    // 从命令行参数获取要监控的合约地址
+    const args = process.argv.slice(2);
+    let CONTRACTS_TO_MONITOR = [];
+    
+    // 解析命令行参数
+    for (let i = 0; i < args.length; i++) {
+        if (args[i] === '--token' || args[i] === '-t') {
+            if (args[i + 1]) {
+                CONTRACTS_TO_MONITOR.push(args[i + 1]);
+                i++; // 跳过下一个参数
+            }
+        } else if (args[i] === '--tokens' || args[i] === '-ts') {
+            if (args[i + 1]) {
+                // 支持逗号分隔的多个地址
+                const addresses = args[i + 1].split(',').map(addr => addr.trim());
+                CONTRACTS_TO_MONITOR.push(...addresses);
+                i++; // 跳过下一个参数
+            }
+        } else if (args[i].startsWith('0x') && args[i].length === 42) {
+            // 直接传入合约地址
+            CONTRACTS_TO_MONITOR.push(args[i]);
+        }
+    }
+
+    // 如果没有从命令行获取到地址，尝试从环境变量获取
+    if (CONTRACTS_TO_MONITOR.length === 0 && process.env.TOKEN_ADDRESSES) {
+        CONTRACTS_TO_MONITOR = process.env.TOKEN_ADDRESSES.split(',').map(addr => addr.trim());
+    }
 
     // 要监控的钱包地址 (可选)
     const WALLET_TO_MONITOR = process.env.WALLET_ADDRESS;
+
+    console.log('🎯 配置信息:');
+    console.log(`📡 RPC URL: ${RPC_URL}`);
+    console.log(`📋 监控合约数量: ${CONTRACTS_TO_MONITOR.length}`);
+    if (CONTRACTS_TO_MONITOR.length > 0) {
+        console.log('📝 监控的合约地址:');
+        CONTRACTS_TO_MONITOR.forEach((addr, index) => {
+            console.log(`   ${index + 1}. ${addr}`);
+        });
+    } else {
+        console.log('📝 监控所有NFT合约');
+    }
+    if (WALLET_TO_MONITOR) {
+        console.log(`👛 监控钱包: ${WALLET_TO_MONITOR}`);
+    }
+    console.log('─'.repeat(50));
 
     const monitor = new NFTMonitor(RPC_URL, CONTRACTS_TO_MONITOR);
 
@@ -191,6 +230,45 @@ async function main() {
         monitor.stopMonitoring();
         process.exit(0);
     });
+}
+
+// 显示使用帮助
+function showHelp() {
+    console.log(`
+NFT Monitor - 实时监控NFT转账
+
+使用方法:
+  node nftMonitor.js [选项] [合约地址...]
+
+选项:
+  -t, --token <address>     监控单个NFT合约地址
+  -ts, --tokens <addresses> 监控多个NFT合约地址 (逗号分隔)
+  -h, --help               显示此帮助信息
+
+示例:
+  # 监控所有NFT转账
+  node nftMonitor.js
+
+  # 监控单个合约
+  node nftMonitor.js --token 0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d
+
+  # 监控多个合约
+  node nftMonitor.js --tokens 0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d,0x60e4d786628fea6478f785a6d7e704777c86a7c6
+
+  # 直接传入合约地址
+  node nftMonitor.js 0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d
+
+环境变量:
+  RPC_URL          - 区块链RPC URL
+  TOKEN_ADDRESSES  - 要监控的合约地址 (逗号分隔)
+  WALLET_ADDRESS   - 要监控的钱包地址
+`);
+}
+
+// 检查是否显示帮助
+if (process.argv.includes('-h') || process.argv.includes('--help')) {
+    showHelp();
+    process.exit(0);
 }
 
 // 运行监控
